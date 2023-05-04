@@ -89,7 +89,7 @@ target/
 # Mypy cache
 .mypy_cache/
 
-
-reports/
+binaries/
+checkpoints/
 data/
 references/
