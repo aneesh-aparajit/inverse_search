@@ -23,3 +23,5 @@ tokenizers
 
 # API
 fastapi[all]
+
+# Visualizations
