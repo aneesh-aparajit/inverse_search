@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
@@ -88,6 +88,12 @@ class MultiHeadAttention(nn.Module):
 
 
 class FeedForwardNetwork(nn.Module):
+    '''Implements the FFN proposed by Vaswani Et. al in Attention is All you Need (page 5, section 3.3)
+    
+    Args:
+    :param: `model_dimension`: int -> represents the embedding dimension which the transformer will handle
+    :param: `embedding_dim`: int -> represents the  dimension of the input vector, from the nn.Embedding layer
+    '''
     def __init__(self, model_dimension: int, hidden_size: int) -> None:
         super(FeedForwardNetwork, self).__init__()
         self.linear1 = nn.Linear(in_features=model_dimension, out_features=hidden_size)
@@ -98,19 +104,67 @@ class FeedForwardNetwork(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int = 512, max_len: int = 5000):
+    def __init__(self, model_dimension: int = 512, max_token_length: int = 5000):
         super(PositionalEncoding, self).__init__()
         
-        self.position_encoding_matrix = torch.zeros((max_len, d_model))
-        position_ids = torch.arange(max_len).unsqueeze(1)
-        dimension_ids = torch.arange(d_model)
+        self.position_encoding_matrix = torch.zeros((max_token_length, model_dimension))
+        position_ids = torch.arange(max_token_length).unsqueeze(1)
+        dimension_ids = torch.arange(model_dimension)
         
         self.position_encoding_matrix = torch.where(
             dimension_ids % 2 == 0,
-            torch.sin(position_ids / 10000**(2*dimension_ids / d_model)), 
-            torch.cos(position_ids / 10000**(2*dimension_ids / d_model)), 
+            torch.sin(position_ids / 10000**(2*dimension_ids / model_dimension)), 
+            torch.cos(position_ids / 10000**(2*dimension_ids / model_dimension)), 
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x + self.position_encoding_matrix[:x.shape[1]] # Take sequence length
+
+
+class EncoderLayer(nn.Module):
+    def __init__(self, model_dimension: int, embedding_dim: int, hidden_size: int) -> None:
+        super(EncoderLayer, self).__init__()
+        self.model_dimension = model_dimension
+        self.embedding_dim = embedding_dim
+        self.hidden_size = hidden_size
+
+        self.layernorm1 = nn.LayerNorm(normalized_shape=self.model_dimension)
+        self.layernorm2 = nn.LayerNorm(normalized_shape=self.model_dimension)
+
+        self.mha = MultiHeadAttention(model_dimension=self.model_dimension, embedding_dim=self.embedding_dim)
+        self.ffn = FeedForwardNetwork(model_dimension=self.model_dimension, hidden_size=self.hidden_size)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        # mha
+        x_ = x.clone()
+        weights, x = self.mha(x)
+        x = x_ + self.layernorm1(x)
+        # ffn
+        x_ = x.clone()
+        x = self.ffn(x)
+        x = x_ + self.layernorm2(x)
+
+        return weights, x
+
+
+class BertEncoder(nn.Module):
+    def __init__(self, model_dimension: int, embedding_dim: int, hidden_size: int, num_encoder_layers: int) -> None:
+        super(BertEncoder, self).__init__()
+        self.num_encoder_layers = num_encoder_layers
+        self.model_dimension = model_dimension
+        self.hidden_size = hidden_size
+        self.embedding_size = embedding_dim
+
+        self.encoder = nn.ModuleList([
+            EncoderLayer(model_dimension=self.model_dimension, embedding_dim=self.embedding_size, hidden_size=self.hidden_size) 
+            for _ in range(self.num_encoder_layers)
+        ])
+    
+    def forward(self, x: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
+        weights = {}
+        for layer_num, layer in self.encoder:
+            wei, x = layer(x)
+            weights[f'layer_{layer_num}'] = wei
+        return weights, x
+
 
