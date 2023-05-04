@@ -1,0 +1,42 @@
+DATA_DIR: '../../data/raw/shopee-product-matching/'
+
+LANGUAGE:
+  MODEL_NAME: 'transformer'
+  CHECKPOINTS_DIR: '../../reports/checkpoints/language/'
+  BINARIES_DIR: '../../reports/binaries/language/'
+  DATA_DIR: '../../data/raw/shopee-product-matching/'
+
+  MAX_LENGTH: 512
+
+  BASELINE_CONFIG:
+    ENCODER_LAYERS: 6
+    MODEL_DIMENSION: 512
+    NUM_HEADS: 8
+    DROPOUT: 0.1
+
+  TOKENIZER_CHECKPOINT: 'bert-base-uncased'
+
+
+VISION:
+  NAME: 'vision-transformer'
+  CHECKPOINTS_DIR: '../../reports/checkpoints/vision/'
+  BINARIES_DIR: '../../reports/binaries/vision/'
+  DATA_DIR: '../../data/raw/shopee-product-matching/'
+
+  TRANSFORMS:
+    HEIGHT: 512
+    WIDTH: 512
+
+  BASELINE_CONFIG:
+    ENCODER_LAYERS: 6
+    MODEL_DIMENSION: 512
+    NUM_HEADS: 8
+    DROPOUT: 0.1
+
+
+HYPERPARAMETERS:
+  LEARNING_RATE: 3e-4
+  BATCH_SIZE: 32
+  OPTIMIZER: 'adam'
+  SCHEDULER: 'CosineAnnealing'
+
