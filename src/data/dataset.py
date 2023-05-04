@@ -68,7 +68,7 @@ if __name__ == '__main__':
     batch = dataset[0]
     __import__('pprint').pprint({k:v.shape for k,v in batch.items()})
 
-    dataloader = DataLoader(dataset=dataset, batch_size=config['HYPERPARAMETERS']['BATCH_SIZE'], shuffle=True)
+    dataloader = DataLoader(dataset=dataset, batch_size=config['HYPERPARAMETERS']['TRAIN_BS'], shuffle=True)
 
     batch = next(iter(dataloader))
 

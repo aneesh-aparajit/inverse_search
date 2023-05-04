@@ -1,7 +1,7 @@
 DATA_DIR: '../../data/raw/shopee-product-matching/'
 
 LANGUAGE:
-  MODEL_NAME: 'transformer'
+  MODEL_NAME: 'bert'
   CHECKPOINTS_DIR: '../../reports/checkpoints/language/'
   BINARIES_DIR: '../../reports/binaries/language/'
   DATA_DIR: '../../data/raw/shopee-product-matching/'
@@ -13,6 +13,8 @@ LANGUAGE:
     MODEL_DIMENSION: 512
     NUM_HEADS: 8
     DROPOUT: 0.1
+    EMBEDDING_DIM: 512
+    HIDDEN_SIZE: 256
 
   TOKENIZER_CHECKPOINT: 'bert-base-uncased'
 
@@ -36,7 +38,13 @@ VISION:
 
 HYPERPARAMETERS:
   LEARNING_RATE: 3e-4
-  BATCH_SIZE: 32
+  TRAIN_BS: 32
+  VALID_BS: 64
   OPTIMIZER: 'adam'
   SCHEDULER: 'CosineAnnealing'
+  T_0: 25
+  WEIGHT_DECAY: 1e-6
+  WARMUP_STEPS: 0
+  MIN_LR: 1e-6
 
+SEED: 1337
