@@ -18,6 +18,8 @@ numpy
 matplotlib
 seaborn
 lightning
+transformers
+tokenizers
 
 # API
 fastapi[all]
