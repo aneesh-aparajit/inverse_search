@@ -13,7 +13,6 @@ Implement a __Multi-Modal Reverse Search Engine__, using methods similar to CLIP
 - The below image contains the model for just one encoder block.
 
 ```
-(venv) ➜  models git:(main) ✗ python bert.py
 BertModel(
   (embedding): Embedding(30522, 768)
   (position_embeddings): BertEmbeddings(
@@ -66,7 +65,50 @@ BertModel(
 
 ### ViT
 
+```
+ViTModel(
+  (patch_embed): ViTPatchEmbedding(
+    (layer): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+  )
+  (positional_embed): ViTPositionEmbedding(
+    (dropout): Dropout(p=0.1, inplace=False)
+  )
+  (encoder): ModuleList(
+    (0-5): 6 x ViTTransformerEncoder(
+      (mha): ViTMultiHeadAttention(
+        (heads): ModuleList(
+          (0-7): 8 x ViTSelfAttention(
+            (query): Linear(in_features=768, out_features=96, bias=True)
+            (key): Linear(in_features=768, out_features=96, bias=True)
+            (value): Linear(in_features=768, out_features=96, bias=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (output): Linear(in_features=768, out_features=768, bias=True)
+        (dropout): Dropout(p=0.1, inplace=False)
+      )
+      (layer_norm_1): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      (layer_norm_2): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      (mlp): ViTMlpLayer(
+        (mlp_activation_fn): GELU(approximate='none')
+        (linear_1): Linear(in_features=768, out_features=3072, bias=True)
+        (linear_2): Linear(in_features=3072, out_features=768, bias=True)
+        (dropout): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (pooler): ViTPooler(
+    (dense): Linear(in_features=768, out_features=768, bias=True)
+    (activation): Tanh()
+  )
+)
+```
+
 ![ViT](https://learnopencv.com/wp-content/uploads/2023/02/image-9.png)
+
+- The below image contains the model for just one encoder block.
+
+![ViT-Custom](./reports/images/vit/ViTModel.png)
 
 
 ### ResNet101

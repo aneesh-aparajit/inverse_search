@@ -279,6 +279,7 @@ class ViTPooler(nn.Module):
 if __name__ == "__main__":
     m = ViTModel(config=config)
     x = th.randn(size=(32, 3, 224, 224))
+    print(m)
     y = m(x)
     print(
         f"""x: {x.shape}
