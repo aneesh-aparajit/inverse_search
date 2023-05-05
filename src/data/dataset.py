@@ -11,7 +11,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer
 
-with open('../config/config_v1.yaml') as f:
+with open('../config/cfg1.yaml') as f:
     config = yaml.safe_load(f)
 
 
@@ -20,15 +20,15 @@ class ClipForImageSearchDataset(Dataset):
         super().__init__()
         self.df = df # [image, title]
         self.split = split
-        self.tokenizer = AutoTokenizer.from_pretrained(config['LANGUAGE']['TOKENIZER_CHECKPOINT'])
+        self.tokenizer = AutoTokenizer.from_pretrained(config['BERT']['TOKENIZER_CHECKPOINT'])
         if self.split == 'train':
             self.transform = A.Compose([
-                A.Resize(height=config['VISION']['TRANSFORMS']['HEIGHT'], width=config['VISION']['TRANSFORMS']['WIDTH']),
+                A.Resize(height=config['ViT']['TRANSFORMS']['HEIGHT'], width=config['ViT']['TRANSFORMS']['WIDTH']),
                 ToTensorV2(),
             ])
         elif self.split == 'test':
             self.transform = A.Compose([
-                A.Resize(height=config['VISION']['TRANSFORMS']['HEIGHT'], width=config['VISION']['TRANSFORMS']['WIDTH']),
+                A.Resize(height=config['ViT']['TRANSFORMS']['HEIGHT'], width=config['ViT']['TRANSFORMS']['WIDTH']),
                 ToTensorV2(),
             ])
         else:
@@ -45,7 +45,7 @@ class ClipForImageSearchDataset(Dataset):
         inputs = self.tokenizer(
             text=text, return_tensors='pt', 
             truncation=True, padding='max_length', 
-            max_length=config['LANGUAGE']['MAX_LENGTH'], return_attention_mask=True, 
+            max_length=config['BERT']['MAX_LENGTH'], return_attention_mask=True, 
             return_token_type_ids=False
         )
 

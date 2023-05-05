@@ -7,6 +7,7 @@ BERT:
   DATA_DIR: '../../data/raw/shopee-product-matching/'
 
   MAX_TOKEN_LENGTH: 512
+  MAX_LENGTH: 64
 
   BASELINE_CONFIG:
     NUM_ENCODER_LAYERS: 12
@@ -50,10 +51,13 @@ HYPERPARAMETERS:
   TRAIN_BS: 32
   VALID_BS: 64
   OPTIMIZER: 'adam'
-  SCHEDULER: 'CosineAnnealing'
+  SCHEDULER: 'CosineAnnealingLR'
   T_0: 25
+  T_MAX: 30000
   WEIGHT_DECAY: 1e-6
   WARMUP_STEPS: 0
   MIN_LR: 1e-6
+  LM: 'BERT'
+  CNN: 'ViT'
 
 SEED: 1337
