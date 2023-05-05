@@ -9,7 +9,7 @@ import yaml
 from dataclasses import dataclass, fields
 
 # read the config file
-with open("../config/config_v1.yaml") as f:
+with open("../config/cfg1.yaml") as f:
     config = yaml.safe_load(f)
 
 
