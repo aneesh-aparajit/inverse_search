@@ -17,7 +17,7 @@ with open("../config/cfg1.yaml") as f:
 class BertOutputDataClass:
     bert_output: th.Tensor
     bert_pooled_output: th.Tensor
-    attention_weights: th.Tensor
+    attention_weights: Dict[str, th.Tensor]
 
 
 class BertModel(nn.Module):
