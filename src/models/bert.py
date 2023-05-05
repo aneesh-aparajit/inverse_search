@@ -333,3 +333,8 @@ if __name__ == "__main__":
     __import__('pprint').pprint({
         k: v.shape for k, v in outputs.attention_weights.items()
     })
+
+    # testing backprop
+    scalar = th.mean(outputs.bert_pooled_output)
+    print(scalar.shape)
+    scalar.backward()
