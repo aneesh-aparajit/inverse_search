@@ -1,7 +1,7 @@
 import math
 from typing import Dict, Tuple
 
-import torch
+import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import yaml
@@ -15,40 +15,40 @@ with open("../config/cfg1.yaml") as f:
 
 @dataclass
 class BertOutputDataClass:
-    bert_output: torch.Tensor
-    bert_pooled_output: torch.Tensor
-    attention_weights: torch.Tensor
+    bert_output: th.Tensor
+    bert_pooled_output: th.Tensor
+    attention_weights: th.Tensor
 
 
 class BertModel(nn.Module):
     def __init__(self, config: Dict[str, any]) -> None:
         super(BertModel, self).__init__()
         self.embedding = nn.Embedding(
-            num_embeddings=config["LANGUAGE"]["BASELINE_CONFIG"]["NUM_EMBEDDINGS"],
-            embedding_dim=config["LANGUAGE"]["BASELINE_CONFIG"]["EMBEDDING_DIM"],
+            num_embeddings=config["BERT"]["BASELINE_CONFIG"]["NUM_EMBEDDINGS"],
+            embedding_dim=config["BERT"]["BASELINE_CONFIG"]["EMBEDDING_DIM"],
         )
         self.position_embeddings = BertEmbeddings(
-            model_dimension=config["LANGUAGE"]["BASELINE_CONFIG"]["MODEL_DIMENSION"]
+            model_dimension=config["BERT"]["BASELINE_CONFIG"]["MODEL_DIMENSION"]
         )
 
         self.encoder = BertEncoder(
-            model_dimension=config["LANGUAGE"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
-            embedding_dim=config["LANGUAGE"]["BASELINE_CONFIG"]["EMBEDDING_DIM"],
-            hidden_size=config["LANGUAGE"]["BASELINE_CONFIG"]["HIDDEN_SIZE"],
-            num_encoder_layers=config["LANGUAGE"]["BASELINE_CONFIG"][
+            model_dimension=config["BERT"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
+            embedding_dim=config["BERT"]["BASELINE_CONFIG"]["EMBEDDING_DIM"],
+            hidden_size=config["BERT"]["BASELINE_CONFIG"]["HIDDEN_SIZE"],
+            num_encoder_layers=config["BERT"]["BASELINE_CONFIG"][
                 "NUM_ENCODER_LAYERS"
             ],
-            intermediate_size=config["LANGUAGE"]["BASELINE_CONFIG"][
+            intermediate_size=config["BERT"]["BASELINE_CONFIG"][
                 "INTERMEDIATE_SIZE"
             ],
         )
 
         self.pooler = BertPooler(
-            in_features=config["LANGUAGE"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
-            out_features=config["LANGUAGE"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
+            in_features=config["BERT"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
+            out_features=config["BERT"]["BASELINE_CONFIG"]["MODEL_DIMENSION"],
         )
 
-    def forward(self, x: torch.Tensor) -> BertOutputDataClass:
+    def forward(self, x: th.Tensor) -> BertOutputDataClass:
         x_embeddings = self.embedding(x)
         x_embeddings = self.position_embeddings(x_embeddings)
         weights, output = self.encoder.forward(x_embeddings)
@@ -68,7 +68,7 @@ class BertPooler(nn.Module):
         )
         self.activation = nn.Tanh()
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         bert_output = self.activation(self.dense(x))
         bert_pooled_output = bert_output.mean(axis=1)
         return bert_output, bert_pooled_output
@@ -96,17 +96,17 @@ class BertSelfAttention(nn.Module):
         self.value = nn.Linear(
             in_features=embedding_dim, out_features=head_dim
         )  # find the projection of input for value
-        self.dropout = nn.Dropout(p=config["LANGUAGE"]["BASELINE_CONFIG"]["DROPOUT"])
+        self.dropout = nn.Dropout(p=config["BERT"]["BASELINE_CONFIG"]["DROPOUT"])
 
     @staticmethod
     def scaled_dot_product_attention(
-        Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
-    ) -> torch.Tensor:
-        weights = F.softmax(torch.bmm(Q, K.mT) / math.sqrt(Q.shape[-1]), dim=-1)
-        outputs = torch.bmm(weights, V)
+        Q: th.Tensor, K: th.Tensor, V: th.Tensor
+    ) -> th.Tensor:
+        weights = F.softmax(th.bmm(Q, K.mT) / math.sqrt(Q.shape[-1]), dim=-1)
+        outputs = th.bmm(weights, V)
         return weights, outputs
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         Q, K, V = self.query(x), self.key(x), self.value(x)
         weights, outputs = self.scaled_dot_product_attention(Q, K, V)
         return weights, self.dropout(outputs)
@@ -154,14 +154,14 @@ class BertAttention(nn.Module):
             in_features=self.model_dimension, out_features=self.model_dimension
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        outputs = torch.tensor([])
-        weights = torch.tensor([])
+    def forward(self, x: th.Tensor) -> th.Tensor:
+        outputs = th.tensor([])
+        weights = th.tensor([])
 
         for head in self.heads:
             weight, output = head(x)
-            outputs = torch.cat([outputs, output], dim=-1)
-            weights = torch.cat([weights, weight], dim=-1)
+            outputs = th.cat([outputs, output], dim=-1)
+            weights = th.cat([weights, weight], dim=-1)
         
         outputs = self.output(outputs)
 
@@ -177,9 +177,9 @@ class BertSelfOutput(nn.Module):
         self.LayerNorm = nn.LayerNorm(
             normalized_shape=(out_features,), eps=1e-12, elementwise_affine=True
         )
-        self.dropout = nn.Dropout(p=config["LANGUAGE"]["BASELINE_CONFIG"]["DROPOUT"])
+        self.dropout = nn.Dropout(p=config["BERT"]["BASELINE_CONFIG"]["DROPOUT"])
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: th.Tensor) -> th.Tensor:
         return self.dropout(self.LayerNorm(self.dense(x)))
 
 
@@ -189,7 +189,7 @@ class BertIntermediate(nn.Module):
         self.dense = nn.Linear(in_features=in_features, out_features=intermediate_size)
         self.intermediate_act_fn = nn.GELU()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: th.Tensor) -> th.Tensor:
         return self.intermediate_act_fn(self.dense(x))
 
 
@@ -206,7 +206,7 @@ class BertOutput(nn.Module):
         self.linear1 = nn.Linear(in_features=model_dimension, out_features=hidden_size)
         self.linear2 = nn.Linear(in_features=hidden_size, out_features=model_dimension)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: th.Tensor) -> th.Tensor:
         x = F.gelu(self.linear1(x))
         return self.linear2(x)
 
@@ -215,18 +215,18 @@ class BertEmbeddings(nn.Module):
     def __init__(self, model_dimension: int = 512, max_token_length: int = 5000):
         super(BertEmbeddings, self).__init__()
 
-        self.position_encoding_matrix = torch.zeros((max_token_length, model_dimension))
-        position_ids = torch.arange(max_token_length).unsqueeze(1)
-        dimension_ids = torch.arange(model_dimension)
+        self.position_encoding_matrix = th.zeros((max_token_length, model_dimension))
+        position_ids = th.arange(max_token_length).unsqueeze(1)
+        dimension_ids = th.arange(model_dimension)
 
-        self.position_encoding_matrix = torch.where(
+        self.position_encoding_matrix = th.where(
             dimension_ids % 2 == 0,
-            torch.sin(position_ids / 10000 ** (2 * dimension_ids / model_dimension)),
-            torch.cos(position_ids / 10000 ** (2 * dimension_ids / model_dimension)),
+            th.sin(position_ids / 10000 ** (2 * dimension_ids / model_dimension)),
+            th.cos(position_ids / 10000 ** (2 * dimension_ids / model_dimension)),
         )
-        self.dropout = nn.Dropout(p=config["LANGUAGE"]["BASELINE_CONFIG"]["DROPOUT"])
+        self.dropout = nn.Dropout(p=config["BERT"]["BASELINE_CONFIG"]["DROPOUT"])
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: th.Tensor) -> th.Tensor:
         return self.dropout(
             x + self.position_encoding_matrix[: x.shape[1]]
         )  # Take sequence length
@@ -251,7 +251,7 @@ class BertLayer(nn.Module):
             model_dimension=self.model_dimension, hidden_size=self.hidden_size
         )
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         # mha
         x_ = x.clone()
         weights, x = self.mha(x)
@@ -300,7 +300,7 @@ class BertEncoder(nn.Module):
             in_features=self.intermediate_size, out_features=self.hidden_size
         )
 
-    def forward(self, x: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
+    def forward(self, x: th.Tensor) -> Tuple[Dict[str, th.Tensor], th.Tensor]:
         weights = {}
         for layer_num, layer in enumerate(self.layers):
             wei, x = layer(x)
@@ -313,9 +313,9 @@ class BertEncoder(nn.Module):
 
 if __name__ == "__main__":
     model = BertModel(config=config)
-    inputs = torch.randint(
+    inputs = th.randint(
         low=0,
-        high=config["LANGUAGE"]["BASELINE_CONFIG"]["NUM_EMBEDDINGS"],
+        high=config["BERT"]["BASELINE_CONFIG"]["NUM_EMBEDDINGS"],
         size=(32, 128),
     )
     outputs = model.forward(inputs)

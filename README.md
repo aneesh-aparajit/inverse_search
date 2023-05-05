@@ -63,3 +63,12 @@ BertModel(
 ```
 
 ![bert-model](/reports/images/bert/BertModel.png)
+
+### ViT
+
+![ViT](https://learnopencv.com/wp-content/uploads/2023/02/image-9.png)
+
+
+### ResNet101
+
+![resnet101](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/resnet_architecture.png)

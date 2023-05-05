@@ -1,6 +1,6 @@
 DATA_DIR: '../../data/raw/shopee-product-matching/'
 
-LANGUAGE:
+BERT:
   MODEL_NAME: 'bert'
   CHECKPOINTS_DIR: '../../reports/checkpoints/language/'
   BINARIES_DIR: '../../reports/binaries/language/'
@@ -21,19 +21,23 @@ LANGUAGE:
   TOKENIZER_CHECKPOINT: 'bert-base-uncased'
 
 
-VISION:
+ViT:
   NAME: 'vision-transformer'
   CHECKPOINTS_DIR: '../../reports/checkpoints/vision/'
   BINARIES_DIR: '../../reports/binaries/vision/'
   DATA_DIR: '../../data/raw/shopee-product-matching/'
 
   TRANSFORMS:
-    HEIGHT: 512
-    WIDTH: 512
+    HEIGHT: 224
+    WIDTH: 224
 
   BASELINE_CONFIG:
     ENCODER_LAYERS: 6
-    MODEL_DIMENSION: 512
+    NUM_HEADS: 8
+    MODEL_DIMENSION: 768
+    IMAGE_HEIGHT: 224
+    IMAGE_WIDTH: 224
+    NUM_CHANNELS: 3
     NUM_HEADS: 8
     DROPOUT: 0.1
 
