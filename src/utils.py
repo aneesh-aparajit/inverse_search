@@ -1,10 +1,11 @@
 from typing import Tuple
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim import lr_scheduler
 import yaml
+from torch.optim import lr_scheduler
 
 from src.models.bert import BertModel
 from src.models.vit import ViTModel
@@ -25,14 +26,45 @@ def get_lm():
     raise NotImplementedError("Just BERT is implemented as of now...")
 
 
-def optimizer(cnn: nn.Module, lm: nn.Module) -> Tuple[any, any]:
-    cnn_optim = optim.Adam(
-        params=cnn.parameters(), lr=config["HYPERPARMATERS"]["LEARNING_RATE"]
-    )
-    lm_optim = optim.Adam(
-        params=lm.parameters(), lr=config["HYPERPARMATERS"]["LEARNING_RATE"]
-    )
-    return cnn_optim, lm_optim
+def get_optimizer(model: nn.Module):
+    """
+    Returns the optimizer based on the config files.
+    """
+    if config["HYPERPARAMETERS"]["OPTIMIZER"] == "Adadelta":
+        optimizer = optim.Adadelta(
+            model.parameters(),
+            lr=config["HYPERPARAMETERS"]["LEARNING_RATE"],
+            rho=config["HYPERPARAMETERS"]["RHO"],
+            eps=config["HYPERPARAMETERS"]["EPS"],
+        )
+    elif config["HYPERPARAMETERS"]["OPTIMIZER"] == "Adagrad":
+        optimizer = optim.Adagrad(
+            model.parameters(),
+            lr=config["HYPERPARAMETERS"]["LEARNING_RATE"],
+            lr_decay=config["HYPERPARAMETERS"]["LR_DECAY"],
+            weight_decay=config["HYPERPARAMETERS"]["WEIGHT_DECAY"],
+        )
+    elif config["HYPERPARAMETERS"]["OPTIMIZER"] == "Adam":
+        optimizer = optim.Adam(
+            model.parameters(),
+            lr=config["HYPERPARAMETERS"]["LEARNING_RATE"],
+            betas=config["HYPERPARAMETERS"]["BETAS"],
+            eps=config["HYPERPARAMETERS"]["EPS"],
+        )
+    elif config["HYPERPARAMETERS"]["OPTIMIZER"] == "RMSProp":
+        optimizer = optim.RMSprop(
+            model.parameters(),
+            lr=config["HYPERPARAMETERS"]["LEARNING_RATE"],
+            alpha=config["HYPERPARAMETERS"]["ALPHA"],
+            eps=config["HYPERPARAMETERS"]["EPS"],
+            weight_decay=config["HYPERPARAMETERS"]["WEIGHT_DECAY"],
+            momentum=config["HYPERPARAMETERS"]["MOMENTUM"],
+        )
+    else:
+        raise NotImplementedError(
+            f"The optimizer {config.optimizer} has not been implemented."
+        )
+    return optimizer
 
 
 def fetch_scheduler(optimizer):
