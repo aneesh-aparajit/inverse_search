@@ -61,4 +61,4 @@ def visualize_clip():
     model_graph.visual_graph
 
 if __name__ == '__main__':
-    visualize_clip()
+    visualize_vit()
