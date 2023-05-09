@@ -67,7 +67,7 @@ def get_optimizer(model: nn.Module):
     return optimizer
 
 
-def fetch_scheduler(optimizer):
+def get_scheduler(optimizer):
     if config["HYPERPARMATERS"].scheduler == "CosineAnnealingLR":
         scheduler = lr_scheduler.CosineAnnealingLR(
             optimizer,
