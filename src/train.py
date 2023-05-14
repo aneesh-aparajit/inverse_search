@@ -1,10 +1,9 @@
-from typing import Dict, Optional, Any
-
 import mlflow
-import seaborn as sns
 import torch as th
+from torch.cuda import amp
 import torch.nn as nn
 import torch.nn.functional as F
+
 import yaml
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -20,40 +19,64 @@ with open("./config/cfg1.yaml") as f:
 
 def train_one_epoch(
     model: ClipModel,
-    optimizer: th.optim,
+    optimizer,
     dataloader: DataLoader,
-    scheduler: th.optim.lr_scheduler = None,
-) -> Dict[str, Any[float, th.Tensor]]:
-    model = model.train()
+    epoch: int,
+    scheduler=None,
+) -> float:
+    model.train()
+    scaler = th.cuda.amp.grad_scaler.GradScaler()
 
+    pbar = tqdm(enumerate(dataloader), total=len(dataloader), desc="(train) ")
+
+    # with mlflow.start_run(run_name=f"ClipModel-epoch-{epoch}"):
     dataset_size = 0.0
-    running_loss = 0.0
+    running_size = 0.0
 
-    pbar = tqdm(enumerate(dataloader), total=len(dataloader), desc=f"(train) ")
     for step, batch in pbar:
-        batch = {k: v.to(config["DEVICE"]) for k, v in batch.items()}
-        batch_size = batch["images"].shape[0]
-        outputs = model.forward(batch=batch)
-        loss = outputs["loss"]
+        batch_size = batch["image"].shape[0]
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        with amp.autocast_mode.autocast():
+            outputs = model.forward(batch=batch)
+
+        scaler.scale(outputs=outputs["loss"]).backward()
+        scaler.step(optimizer=optimizer)
+        scaler.update()
+
+        running_size += outputs["loss"].item() * batch_size
+        dataset_size += batch_size
+        epoch_loss = running_size / dataset_size
 
         if scheduler is not None:
             scheduler.step()
 
-        running_loss += batch_size * loss.item()
+        pbar.set_postfix(loss=f"{epoch_loss:>.5f}")
+
+        mlflow.log_metric("train_loss", epoch_loss, step=step)
+
+    return epoch_loss
+
+
+@th.no_grad()
+def valid_one_epoch(model: ClipModel, dataloader: DataLoader, epoch: int) -> float:
+    model.eval()
+    dataset_size = 0.0
+    running_size = 0.0
+
+    pbar = tqdm(enumerate(dataloader), total=len(dataloader), desc="(valid) ")
+
+    for step, batch in pbar:
+        batch_size = batch["image"].shape[0]
+
+        with amp.autocast_mode.autocast():
+            outputs = model.forward(batch=batch)
+
+        running_size += outputs["loss"].item() * batch_size
         dataset_size += batch_size
-        epoch_loss = running_loss / dataset_size
+        epoch_loss = running_size / dataset_size
 
-        mlflow.log_metric("train_step_loss", loss.item())
+        pbar.set_postfix(loss=f"{epoch_loss:>.5f}")
 
-        pbar.set_postfix(loss=f"{epoch_loss:.5f}", step=step)
+        mlflow.log_metric("valid_loss", epoch_loss, step=step)
 
-    return {
-        "epoch_loss": epoch_loss,
-        "last_loss": loss.item(),
-        "similarity": outputs["similarity_matrix"],
-    }
-
+    return epoch_loss
